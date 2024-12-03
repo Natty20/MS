@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 
 // Fonction signup
 const signup = async (req, res) => {
@@ -8,11 +9,6 @@ const signup = async (req, res) => {
     const { name, email, password } = req.body;
 
     try {
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: 'Email déjà utilisé' });
-        }
-
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const newUser = new User({
@@ -43,7 +39,17 @@ const login = async (req, res) => {
         return res.status(400).json({ message: 'mdp incorrect' });
     }
 
-    res.status(200).json({ message: 'Connexion réussie' });
+    const token = jwt.sign(
+        { userId: user._id, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+    );
+    console.log("Connexion réussie");
+    console.log(req.body);
+    console.log("the token is :", token);
+    
+
+    res.status(200).json({ message: 'Connexion réussie', token });
 };
 
 module.exports = { signup, login };
